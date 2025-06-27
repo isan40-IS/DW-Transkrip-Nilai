@@ -79,7 +79,7 @@ table_sql = [
     """,
     """
     CREATE TABLE Fact_Nilai_MK (
-        id_transkrip INT AUTO_INCREMENT PRIMARY KEY,
+        id_fakta_nilai_mk INT AUTO_INCREMENT PRIMARY KEY,
         id_mahasiswa INT,
         id_mk INT,
         id_waktu INT,
@@ -92,7 +92,7 @@ table_sql = [
     """,
     """
     CREATE TABLE Fact_Nilai_Semester (
-        id_fakta INT AUTO_INCREMENT PRIMARY KEY,
+        id_fakta_nilai_semester INT AUTO_INCREMENT PRIMARY KEY,
         id_mahasiswa INT,
         id_waktu INT,
         id_nilai INT,
