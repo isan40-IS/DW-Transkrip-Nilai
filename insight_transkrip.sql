@@ -88,14 +88,11 @@ LIMIT 5;
 
 -- Insight 9: Total SKS lulus per mahasiswa
 SELECT
-    m.nrp, m.nama,
-    SUM(mk.sks) AS total_sks_lulus
-FROM Fact_Nilai_MK f
-JOIN Dim_Mahasiswa m ON f.id_mahasiswa = m.id_mahasiswa
-JOIN Dim_MataKuliah mk ON f.id_mk = mk.id_mk
-JOIN Dim_Nilai n ON f.id_nilai = n.id_nilai
-WHERE n.bobot >= 2.0
-GROUP BY m.id_mahasiswa;
+    nrp,
+    nama,
+    sks_lulus AS total_sks_lulus
+FROM Dim_Mahasiswa
+ORDER BY total_sks_lulus DESC;
 
 -- Insight 10: Mahasiswa belum lulus suatu MK (nilai D/E tanpa perbaikan)
 SELECT DISTINCT
@@ -322,17 +319,33 @@ WHERE (w1.tahun > w2.tahun) OR (w1.tahun = w2.tahun AND w1.semester = 'Genap' AN
   );
 
 -- Insight 28  : Ranking mahasiswa per semester berdasarkan IPS
+WITH nilai_ranked AS (
+    SELECT
+        w.tahun,
+        w.semester,
+        m.nrp,
+        m.nama,
+        f.ips,
+        ROW_NUMBER() OVER (PARTITION BY m.id_mahasiswa, w.id_waktu ORDER BY f.ips DESC) AS rn
+    FROM Fact_Nilai_Semester f
+    JOIN Dim_Mahasiswa m ON f.id_mahasiswa = m.id_mahasiswa
+    JOIN Dim_Waktu w ON f.id_waktu = w.id_waktu
+)
+-- Ambil hanya 1 IPS per mahasiswa per semester
+, nilai_bersih AS (
+    SELECT *
+    FROM nilai_ranked
+    WHERE rn = 1
+)
 SELECT
-    w.tahun,
-    w.semester,
-    m.nrp,
-    m.nama,
-    f.ips,
-    RANK() OVER (PARTITION BY w.tahun, w.semester ORDER BY f.ips DESC) AS peringkat_ips
-FROM Fact_Nilai_Semester f
-JOIN Dim_Mahasiswa m ON f.id_mahasiswa = m.id_mahasiswa
-JOIN Dim_Waktu w ON f.id_waktu = w.id_waktu
-ORDER BY w.tahun, w.semester, peringkat_ips;
+    tahun,
+    semester,
+    nrp,
+    nama,
+    ips,
+    DENSE_RANK() OVER (PARTITION BY tahun, semester ORDER BY ips DESC) AS peringkat_ips
+FROM nilai_bersih
+ORDER BY tahun, semester, peringkat_ips;
 
 -- Insight 29  : Identifikasi semester dengan penurunan kolektif IPS terbesar
 SELECT
